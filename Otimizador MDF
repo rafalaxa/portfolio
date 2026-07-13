@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MDF Optimizer Pro — Otimização de Corte para Marcenaria</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D0D14;--surface:#17172A;--surface2:#1F1F33;--border:#2A2A45;
+  --primary:#D4892A;--primary-h:#E8A040;--primary-d:#A8681E;
+  --text:#E2E2F0;--muted:#6868A0;
+  --ok:#3CB371;--warn:#FFB830;--err:#E05050;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{font-size:19px;font-weight:800;background:linear-gradient(135deg,#D4892A,#F5C878);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo-sub{font-size:11px;color:var(--muted);margin-top:-2px}
+.badge{font-size:10px;background:var(--primary-d);color:#fff;border-radius:20px;padding:2px 10px;font-weight:600}
+.main{display:flex;flex:1;overflow:hidden}
+.sidebar{width:380px;min-width:320px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:11px;flex-shrink:0}
+.sec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:5px}
+.sub-sec{font-size:10px;color:var(--primary);margin:3px 0 5px;padding-left:6px;border-left:2px solid var(--primary-d);font-weight:600}
+.form-group{margin-bottom:8px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+input,select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 8px;font-size:13px;outline:none;transition:border-color .18s}
+input:focus,select:focus{border-color:var(--primary)}
+input[type=number]::-webkit-inner-spin-button{opacity:.4}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.divider{height:1px;background:var(--border)}
+.btn-calc{width:100%;padding:11px;background:linear-gradient(135deg,var(--primary),#E8A040);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s}
+.btn-calc:hover{opacity:.9}
+.btn-calc:active{transform:scale(.99)}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px;text-align:center}
+.stat-val{font-size:19px;font-weight:800;color:var(--primary)}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:1px}
+.warn-box{background:#2A1A0A;border:1px solid #A06020;border-radius:6px;padding:8px 10px;font-size:11px;color:#FFB830;line-height:1.4}
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 18px;flex-shrink:0}
+.tab{padding:11px 16px;cursor:pointer;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;transition:color .18s;user-select:none}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.tab-content{flex:1;overflow:hidden;position:relative}
+.tab-panel{display:none;height:100%;flex-direction:column}
+.tab-panel.active{display:flex}
+#canvas3d{width:100%;height:100%;display:block;cursor:grab}
+#canvas3d:active{cursor:grabbing}
+.overlay-hint{position:absolute;bottom:14px;left:14px;background:rgba(0,0,0,.55);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--muted);pointer-events:none}
+.controls-3d{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:5px}
+.btn-sm{background:rgba(23,23,42,.92);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 10px;font-size:11px;cursor:pointer;transition:background .18s;white-space:nowrap}
+.btn-sm:hover{background:var(--surface2)}
+#empty-3d{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);background:var(--surface)}
+.empty-icon{font-size:52px;opacity:.4}
+.empty-title{font-size:17px;font-weight:600}
+.empty-sub{font-size:12px}
+.map-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+.sheet-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.sheet-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;gap:7px}
+.sheet-title{font-size:13px;font-weight:700}
+.sheet-meta{display:flex;gap:12px;font-size:11px;color:var(--muted)}
+.eff-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:10px;overflow:hidden}
+.eff-fill{height:100%;border-radius:2px;transition:width .5s}
+canvas.map-canvas{width:100%;height:auto;display:block;border-radius:4px}
+.piece-area{flex:1;overflow-y:auto;padding:16px}
+table.ptable{width:100%;border-collapse:collapse;font-size:12px}
+.ptable th{background:var(--surface2);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)}
+.ptable td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.ptable tr:hover td{background:var(--surface2)}
+.ptable tfoot td{font-weight:700;color:var(--primary);border-top:2px solid var(--border)}
+.dot{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle}
+.export-bar{padding:9px 16px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0}
+.btn-pdf{padding:7px 15px;background:var(--primary);border:none;border-radius:6px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-pdf:hover{opacity:.85}
+.btn-csv{padding:7px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;transition:background .18s}
+.btn-csv:hover{background:var(--border)}
+.export-info{font-size:11px;color:var(--muted);margin-left:auto}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+.opt-tag{display:inline-block;font-size:9px;padding:2px 6px;border-radius:4px;margin:2px 2px 2px 0;vertical-align:middle;font-weight:600}
+.tag-ripado{background:#2A2010;color:#D4892A;border:1px solid #6A4010}
+.tag-glass{background:#102030;color:#80C8F0;border:1px solid #206080}
+.tag-none{background:#201020;color:#A06080;border:1px solid #602040}
+.tag-cuba{background:#0A2030;color:#60B8E0;border:1px solid #1A5070}
+.tag-default{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.cuba-box{background:#0F1E28;border:1px solid #1A4860;border-radius:6px;padding:8px 10px;margin-top:3px}
+.col-card{background:var(--bg);border:1px solid var(--primary-d);border-radius:8px;padding:9px;margin-bottom:8px}
+.col-card-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.col-card-label{font-size:12px;font-weight:700;color:var(--primary)}
+.col-card-w{font-size:10px;color:var(--muted)}
+.block-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px;margin-bottom:6px}
+.block-card-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.block-card-label{font-size:10px;font-weight:700;color:var(--text)}
+.btn-del{background:none;border:none;color:var(--err);cursor:pointer;font-size:16px;line-height:1;padding:0 3px;opacity:.7;transition:opacity .15s}
+.btn-del:hover{opacity:1}
+.btn-add-unit{padding:6px;background:none;border:1.5px dashed var(--border);border-radius:6px;color:var(--muted);font-size:10px;cursor:pointer;transition:all .18s}
+.btn-add-unit:hover{border-color:var(--primary);color:var(--primary)}
+.col-add-row{display:flex;gap:4px;margin-top:2px}
+.col-add-row .btn-add-unit{flex:1}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">🪵 MDF Optimizer Pro</div>
+    <div class="logo-sub">Otimização inteligente de chapas para marcenaria</div>
+  </div>
+  <span class="badge">v7.0</span>
+</header>
+
+<div class="main">
+  <aside class="sidebar">
+
+    <div>
+      <div class="sec-title">Tipo de Móvel</div>
+      <div class="form-group">
+        <select id="fType" onchange="onTypeChange()">
+          <option value="armario">🚪 Armário</option>
+          <option value="estante">📚 Estante Aberta</option>
+          <option value="nicho">⬛ Nicho / Box</option>
+          <option value="balcao">🍳 Balcão de Cozinha</option>
+          <option value="gabinete_banheiro">🚿 Gabinete de Banheiro</option>
+          <option value="closet">👗 Closet / Guarda-Roupa</option>
+          <option value="painel_ripado">〰️ Painel Ripado</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="sec-title">Dimensões <span style="font-weight:400;font-size:9px">(mm)</span></div>
+      <div class="row2">
+        <div class="form-group"><label>Largura</label><input type="number" id="fW" value="2200" min="50" max="6000" step="10" onchange="renderColumns()"></div>
+        <div class="form-group"><label>Altura</label><input type="number" id="fH" value="2200" min="50" max="3000" step="10"></div>
+      </div>
+      <div class="form-group"><label>Profundidade</label><input type="number" id="fD" value="500" min="50" max="2000" step="10"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div id="columnsSection">
+      <div class="sec-title">Estrutura de Colunas</div>
+      <div class="row2">
+        <div class="form-group"><label>Nº de Colunas</label><input type="number" id="nCols" value="3" min="1" max="6" onchange="setNCols()"></div>
+        <div class="form-group"><label>Prof. Prateleira (mm)</label><input type="number" id="shelfD" value="0" min="0" step="10" placeholder="Auto"></div>
+      </div>
+      <div id="columnsContainer"></div>
+      <button class="btn-add-unit" style="width:100%" onclick="addColumn()">＋ Adicionar Coluna</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div id="cubaSection" style="display:none">
+      <div class="sec-title">Cuba / Pia</div>
+      <div class="cuba-box">
+        <div class="form-group">
+          <label>Posição da Cuba</label>
+          <select id="cubaPos" onchange="onCubaPosChange()">
+            <option value="none">✖ Sem Cuba</option>
+            <option value="center">⬛ Centro</option>
+            <option value="left">◀ Esquerda</option>
+            <option value="right">▶ Direita</option>
+          </select>
+        </div>
+        <div id="cubaDims" style="display:none">
+          <div class="row2">
+            <div class="form-group"><label>Largura Cuba (mm)</label><input type="number" id="cubaW" value="400" min="200" max="1200" step="10"></div>
+            <div class="form-group"><label>Prof. Cuba (mm)</label><input type="number" id="cubaD" value="350" min="150" max="600" step="10"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="sec-title">Painéis</div>
+      <div class="row3">
+        <div class="form-group">
+          <label>Fundo</label>
+          <select id="backType">
+            <option value="mdf">🪵 Liso</option>
+            <option value="ripado">〰️ Ripado</option>
+            <option value="none">✖ Sem</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Laterais</label>
+          <select id="latType">
+            <option value="mdf">🪵 Liso</option>
+            <option value="ripado">〰️ Ripado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Frente</label>
+          <select id="frontType">
+            <option value="none">✖ Sem</option>
+            <option value="mdf">🪵 MDF</option>
+            <option value="ripado">〰️ Ripado</option>
+          </select>
+        </div>
+      </div>
+      <div id="panelTags" style="margin-top:2px"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="sec-title">Estrutura</div>
+      <div class="row2">
+        <div class="form-group">
+          <label>Tipo de Base</label>
+          <select id="baseType">
+            <option value="none">✖ Sem Base</option>
+            <option value="com">✔ Com Base</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Pezinhos</label>
+          <select id="legsType" onchange="onLegsTypeChange()">
+            <option value="none">✖ Sem</option>
+            <option value="com">✔ Com Pezinhos</option>
+          </select>
+        </div>
+      </div>
+      <div id="legsDims" style="display:none">
+        <div class="row2">
+          <div class="form-group"><label>Alt. Pezinho (mm)</label><input type="number" id="legsH" value="80" min="20" max="300" step="5"></div>
+          <div class="form-group"><label>Larg. Pezinho (mm)</label><input type="number" id="legsW" value="40" min="10" max="100" step="5"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="sec-title">Chapa de MDF</div>
+      <div class="form-group">
+        <label>Tamanho da Chapa</label>
+        <select id="sheetPreset" onchange="onSheetChange()">
+          <option value="2750x1850">2750 × 1850 mm (padrão)</option>
+          <option value="2200x1850">2200 × 1850 mm</option>
+          <option value="1850x1000">1850 × 1000 mm (meia chapa)</option>
+          <option value="custom">Personalizado…</option>
+        </select>
+      </div>
+      <div id="customSheet" style="display:none">
+        <div class="row2">
+          <div class="form-group"><label>Larg. chapa</label><input type="number" id="sheetW" value="2750" min="300"></div>
+          <div class="form-group"><label>Alt. chapa</label><input type="number" id="sheetH" value="1850" min="300"></div>
+        </div>
+      </div>
+      <div class="row3">
+        <div class="form-group">
+          <label>Espessura MDF</label>
+          <select id="thick">
+            <option value="15">15 mm</option>
+            <option value="18" selected>18 mm</option>
+            <option value="25">25 mm</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Kerf</label>
+          <select id="kerf">
+            <option value="3" selected>3 mm</option>
+            <option value="4">4 mm</option>
+            <option value="5">5 mm</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>R$/chapa</label>
+          <input type="number" id="price" value="180" min="0" step="5">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-calc" onclick="calculate()">⚡ Calcular Otimização</button>
+
+    <div id="statsSection" style="display:none">
+      <div class="divider"></div>
+      <div class="sec-title">Resumo</div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-val" id="sSheets">—</div><div class="stat-lbl">Chapas</div></div>
+        <div class="stat-card"><div class="stat-val" id="sEff">—</div><div class="stat-lbl">Aproveitamento</div></div>
+        <div class="stat-card"><div class="stat-val" id="sPieces">—</div><div class="stat-lbl">Total Peças</div></div>
+        <div class="stat-card"><div class="stat-val" id="sCost">—</div><div class="stat-lbl">Custo Material</div></div>
+      </div>
+      <div id="warnBox" class="warn-box" style="display:none"></div>
+    </div>
+
+  </aside>
+
+  <div class="content">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('3d',this)">📐 Modelo 3D</div>
+      <div class="tab" onclick="switchTab('map',this)">✂️ Mapa de Corte</div>
+      <div class="tab" onclick="switchTab('pcs',this)">📋 Lista de Peças</div>
+    </div>
+    <div class="tab-content">
+
+      <div class="tab-panel active" id="tab-3d" style="position:relative">
+        <canvas id="canvas3d"></canvas>
+        <div class="overlay-hint">🖱 Arrastar = rotacionar · Scroll = zoom</div>
+        <div class="controls-3d">
+          <button class="btn-sm" onclick="resetCam()">🎯 Reset câmera</button>
+          <button class="btn-sm" id="doorToggleBtn"   onclick="toggleGroup('doors','🚪')">🚪 Ocultar portas</button>
+          <button class="btn-sm" id="drawerToggleBtn" onclick="toggleGroup('drawers','🗄')">🗄 Ocultar gavetas</button>
+          <button class="btn-sm" id="shelfToggleBtn"  onclick="toggleGroup('shelves','📦')">📦 Ocultar prateleiras</button>
+          <button class="btn-sm" id="cubaToggleBtn"   onclick="toggleGroup('cuba','🚰')" style="display:none">🚰 Ocultar cuba</button>
+        </div>
+        <div id="edit3d-panel" style="display:none;position:absolute;bottom:55px;left:14px;background:rgba(15,15,26,.96);border:1px solid var(--border);border-radius:10px;padding:11px 14px;min-width:210px;z-index:20;backdrop-filter:blur(4px)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+            <span id="edit3d-title" style="font-size:12px;color:var(--primary);font-weight:700"></span>
+            <button onclick="closeEdit3D()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1">✕</button>
+          </div>
+          <div id="edit3d-dims" style="font-size:11px;color:var(--muted);margin-bottom:6px"></div>
+          <div id="edit3d-actions" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+        </div>
+        <div id="hover3d-label" style="display:none;position:absolute;pointer-events:none;background:rgba(0,0,0,.75);border-radius:5px;padding:3px 8px;font-size:10px;color:var(--text);z-index:15;white-space:nowrap"></div>
+        <div id="empty-3d">
+          <div class="empty-icon">🪵</div>
+          <div class="empty-title">Configure o móvel</div>
+          <div class="empty-sub">Preencha os campos e clique em Calcular</div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-map">
+        <div class="map-area" id="mapArea">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--muted)">
+            <div style="font-size:48px;opacity:.4">✂️</div>
+            <div style="font-size:17px;font-weight:600">Nenhum projeto calculado</div>
+            <div style="font-size:12px">Configure e clique em Calcular</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-pcs" style="overflow:hidden">
+        <div class="piece-area" id="pieceArea">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--muted)">
+            <div style="font-size:48px;opacity:.4">📋</div>
+            <div style="font-size:17px;font-weight:600">Nenhum projeto calculado</div>
+            <div style="font-size:12px">Configure e clique em Calcular</div>
+          </div>
+        </div>
+        <div class="export-bar" id="exportBar" style="display:none">
+          <button class="btn-pdf" onclick="exportPDF()">📄 Exportar PDF</button>
+          <button class="btn-csv" onclick="copyCSV()">📊 Copiar CSV</button>
+          <span class="export-info" id="exportInfo"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let projectData = null;
+let scene, camera, renderer;
+let isDrag = false, prevMouse = {x:0,y:0};
+let camSph = {theta:0.75, phi:0.48, r:5};
+let meshGroups = {base:[], doors:[], drawers:[], shelves:[], cuba:[], maleiro:[], cabideiro:[]};
+let groupVisible = {doors:true, drawers:true, shelves:true, cuba:true, maleiro:true, cabideiro:true};
+let currentS = 1;
+let raycaster3d = null, mouse3d = new (typeof THREE!=='undefined'?THREE.Vector2:Object)();
+let hoveredMesh = null, selectedMesh = null;
+let hoverBoxMesh = null, selectBoxMesh = null;
+
+// Cada coluna: {doorType:'mdf'|'frente'|'glass'|'ripado'|'none', shelves:N, blocks:[block,...]}
+// Cada block: {kind:'gaveteiro'|'cabideiro'|'maleiro', vertPos:'baixo'|'meio'|'cima', ...campos específicos}
+let columns = [];
+
+const DOOR_TYPE_OPTS=[['none','✖ Sem porta'],['mdf','🪵 MDF'],['glass','🔲 Vidro'],['espelho','🪞 Espelho'],['frente','⬜ Frente'],['ripado','〰️ Ripado']];
+const BLOCK_DOOR_OPTS=[['none','✖ Aberto'],['mdf','🪵 MDF'],['frente','⬜ Frente'],['ripado','〰️ Ripado']];
+const VERT_OPTS=[['baixo','↓ Baixo'],['meio','⬛ Meio'],['cima','↑ Cima']];
+
+const COLORS = [
+  '#C47222','#E8942A','#D4A040','#8B5E3C','#F0B878',
+  '#BA8545','#A0703A','#D48030','#E0A060','#C09040',
+  '#7A5030','#B87030','#906028','#D4C060','#A89040'
+];
+
+// ═══════════════════════════════════════════════════════════
+// COLUMNS — state + UI
+// ═══════════════════════════════════════════════════════════
+function defaultColumn(){ return {doorType:'mdf', shelves:0, blocks:[]}; }
+
+function liveColumnWidthMM(idx){
+  const W=+document.getElementById('fW').value||800;
+  const t=+document.getElementById('thick').value||18;
+  const nCols=Math.max(1,+document.getElementById('nCols').value||1);
+  const iw=W-2*t;
+  const nDiv=nCols-1;
+  return Math.round((iw-nDiv*t)/nCols);
+}
+
+function setNCols(){
+  const n=Math.max(1,Math.min(6,+document.getElementById('nCols').value||1));
+  document.getElementById('nCols').value=n;
+  while(columns.length<n) columns.push(defaultColumn());
+  columns.length=n;
+  renderColumns(); scheduleAutoCalc();
+}
+function addColumn(){
+  if(columns.length>=6)return;
+  columns.push(defaultColumn());
+  document.getElementById('nCols').value=columns.length;
+  renderColumns(); scheduleAutoCalc();
+}
+function removeColumn(ci){
+  if(columns.length<=1)return; // sempre precisa de ao menos 1 coluna
+  columns.splice(ci,1);
+  document.getElementById('nCols').value=columns.length;
+  renderColumns(); scheduleAutoCalc();
+}
+
+function defaultBlock(kind){
+  if(kind==='gaveteiro') return {kind,vertPos:'baixo',qty:2,unitH:300,sentido:'horizontal',doorType:'mdf',depth:0};
+  if(kind==='cabideiro') return {kind,vertPos:'cima',nRods:1,unitH:1100};
+  if(kind==='sapateira') return {kind,vertPos:'baixo',vaos:4,unitH:800};
+  return {kind:'maleiro',vertPos:'cima',unitH:350,doorType:'none'};
+}
+function addColBlock(ci,kind){
+  if(!columns[ci])return;
+  columns[ci].blocks.push(defaultBlock(kind));
+  renderColumns(); scheduleAutoCalc();
+}
+function removeColBlock(ci,bi){
+  if(!columns[ci])return;
+  columns[ci].blocks.splice(bi,1);
+  renderColumns(); scheduleAutoCalc();
+}
+function setColBlockField(ci,bi,key,val){
+  if(!columns[ci]||!columns[ci].blocks[bi])return;
+  columns[ci].blocks[bi][key]=val;
+}
+function setColDoor(ci,val){ if(columns[ci]) columns[ci].doorType=val; }
+function setColShelves(ci,val){ if(columns[ci]) columns[ci].shelves=Math.max(0,val); }
+
+function renderBlockCard(ci,bi,b){
+  const phVal = b.kind==='gaveteiro' ? Math.round((b.unitH||300)/Math.max(1,b.qty||1)) : null;
+  const vertSel = `<select onchange="setColBlockField(${ci},${bi},'vertPos',this.value);scheduleAutoCalc()">
+      ${VERT_OPTS.map(([v,l])=>`<option value="${v}"${b.vertPos===v?' selected':''}>${l}</option>`).join('')}
+    </select>`;
+  if(b.kind==='gaveteiro'){
+    return `<div class="block-card">
+      <div class="block-card-hdr"><span class="block-card-label">🗄 Gaveteiro</span><button class="btn-del" onclick="removeColBlock(${ci},${bi})">×</button></div>
+      <div class="row2">
+        <div class="form-group"><label>Qtd. Gavetas</label><input type="number" value="${b.qty}" min="1" max="8" onchange="setColBlockField(${ci},${bi},'qty',+this.value);renderColumns();scheduleAutoCalc()"></div>
+        <div class="form-group"><label>Alt. Total (mm)</label><input type="number" value="${b.unitH}" min="80" max="2000" step="10" onchange="setColBlockField(${ci},${bi},'unitH',+this.value);renderColumns();scheduleAutoCalc()"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:5px">Alt/gaveta: <strong style="color:var(--primary)">${phVal}mm</strong> · Largura: <strong style="color:var(--primary)">auto (coluna)</strong></div>
+      <div class="row2">
+        <div class="form-group"><label>Posição Vert.</label>${vertSel}</div>
+        <div class="form-group"><label>Sentido</label>
+          <select onchange="setColBlockField(${ci},${bi},'sentido',this.value);scheduleAutoCalc()">
+            ${['horizontal','vertical'].map(v=>`<option value="${v}"${b.sentido===v?' selected':''}>${v==='horizontal'?'↕ Empilhado':'↔ Lado a lado'}</option>`).join('')}
+          </select></div>
+      </div>
+      <div class="row2">
+        <div class="form-group"><label>Porta gaveta</label>
+          <select onchange="setColBlockField(${ci},${bi},'doorType',this.value);scheduleAutoCalc()">
+            ${BLOCK_DOOR_OPTS.filter(([v])=>v!=='none').map(([v,l])=>`<option value="${v}"${b.doorType===v?' selected':''}>${l}</option>`).join('')}
+          </select></div>
+        <div class="form-group"><label>Prof. (mm, 0=auto)</label><input type="number" value="${b.depth}" min="0" step="10" onchange="setColBlockField(${ci},${bi},'depth',+this.value);scheduleAutoCalc()"></div>
+      </div>
+    </div>`;
+  }
+  if(b.kind==='cabideiro'){
+    return `<div class="block-card">
+      <div class="block-card-hdr"><span class="block-card-label">👔 Cabideiro</span><button class="btn-del" onclick="removeColBlock(${ci},${bi})">×</button></div>
+      <div class="row2">
+        <div class="form-group"><label>Qtd. Seções</label><input type="number" value="${b.nRods}" min="1" max="6" onchange="setColBlockField(${ci},${bi},'nRods',+this.value);scheduleAutoCalc()"></div>
+        <div class="form-group"><label>Alt. Total (mm)</label><input type="number" value="${b.unitH}" min="300" max="2000" step="50" onchange="setColBlockField(${ci},${bi},'unitH',+this.value);scheduleAutoCalc()"></div>
+      </div>
+      <div class="form-group"><label>Posição Vert.</label>${vertSel}</div>
+    </div>`;
+  }
+  if(b.kind==='sapateira'){
+    const vaoH=Math.round((b.unitH||800)/Math.max(1,b.vaos||1));
+    return `<div class="block-card">
+      <div class="block-card-hdr"><span class="block-card-label">👞 Sapateira</span><button class="btn-del" onclick="removeColBlock(${ci},${bi})">×</button></div>
+      <div class="row2">
+        <div class="form-group"><label>Qtd. Vãos</label><input type="number" value="${b.vaos}" min="1" max="12" onchange="setColBlockField(${ci},${bi},'vaos',+this.value);renderColumns();scheduleAutoCalc()"></div>
+        <div class="form-group"><label>Alt. Total (mm)</label><input type="number" value="${b.unitH}" min="100" max="2000" step="10" onchange="setColBlockField(${ci},${bi},'unitH',+this.value);renderColumns();scheduleAutoCalc()"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:5px">Alt/vão: <strong style="color:var(--primary)">${vaoH}mm</strong> · Largura: <strong style="color:var(--primary)">auto (coluna)</strong></div>
+      <div class="form-group"><label>Posição Vert.</label>${vertSel}</div>
+    </div>`;
+  }
+  // maleiro — posição sempre no topo absoluto da coluna (não editável)
+  return `<div class="block-card">
+    <div class="block-card-hdr"><span class="block-card-label">🧳 Maleiro</span><button class="btn-del" onclick="removeColBlock(${ci},${bi})">×</button></div>
+    <div class="row2">
+      <div class="form-group"><label>Alt. (mm)</label><input type="number" value="${b.unitH}" min="100" max="800" step="10" onchange="setColBlockField(${ci},${bi},'unitH',+this.value);scheduleAutoCalc()"></div>
+      <div class="form-group"><label>Porta</label>
+        <select onchange="setColBlockField(${ci},${bi},'doorType',this.value);scheduleAutoCalc()">
+          ${BLOCK_DOOR_OPTS.map(([v,l])=>`<option value="${v}"${b.doorType===v?' selected':''}>${l}</option>`).join('')}
+        </select></div>
+    </div>
+    <div style="font-size:10px;color:var(--muted)">📍 Posição: <strong style="color:var(--primary)">⬆ Sempre no topo da coluna</strong></div>
+  </div>`;
+}
+
+function renderColumns(){
+  const c=document.getElementById('columnsContainer');
+  if(!c)return;
+  c.innerHTML=columns.map((col,ci)=>{
+    const wmm=liveColumnWidthMM(ci);
+    return `<div class="col-card">
+      <div class="col-card-hdr">
+        <span class="col-card-label">Coluna ${ci+1}</span>
+        <span style="display:flex;align-items:center;gap:6px">
+          <span class="col-card-w">${wmm}mm de largura</span>
+          ${columns.length>1?`<button class="btn-del" onclick="removeColumn(${ci})" title="Remover coluna">×</button>`:''}
+        </span>
+      </div>
+      <div class="row2">
+        <div class="form-group"><label>Porta da coluna</label>
+          <select onchange="setColDoor(${ci},this.value);scheduleAutoCalc()">
+            ${DOOR_TYPE_OPTS.map(([v,l])=>`<option value="${v}"${col.doorType===v?' selected':''}>${l}</option>`).join('')}
+          </select></div>
+        <div class="form-group"><label>Prateleiras (no vão livre)</label>
+          <input type="number" value="${col.shelves}" min="0" max="10" onchange="setColShelves(${ci},+this.value);scheduleAutoCalc()"></div>
+      </div>
+      ${col.blocks.map((b,bi)=>renderBlockCard(ci,bi,b)).join('')}
+      <div class="col-add-row">
+        <button class="btn-add-unit" onclick="addColBlock(${ci},'gaveteiro')">＋ Gaveteiro</button>
+        <button class="btn-add-unit" onclick="addColBlock(${ci},'cabideiro')">＋ Cabideiro</button>
+        <button class="btn-add-unit" onclick="addColBlock(${ci},'maleiro')">＋ Maleiro</button>
+        <button class="btn-add-unit" onclick="addColBlock(${ci},'sapateira')">＋ Sapateira</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='3d'&&renderer&&scene&&camera) renderer.render(scene,camera);
+}
+
+// ═══════════════════════════════════════════════════════════
+// LAYOUT ENGINE — generic vertical stacking inside a column
+// (used identically by calcPieces — in mm — and update3D — in scene units)
+// ═══════════════════════════════════════════════════════════
+function layoutColumn(items, totalH, gap){
+  let baixoY=0, cimaY=totalH;
+  const placements=[]; const meios=[];
+  items.forEach(it=>{
+    if(it.vertPos==='cima'){ const y1=cimaY,y0=cimaY-it.h; cimaY=y0-gap; placements.push(Object.assign({},it,{y0,y1})); }
+    else if(it.vertPos==='meio'){ meios.push(it); }
+    else { const y0=baixoY,y1=baixoY+it.h; baixoY=y1+gap; placements.push(Object.assign({},it,{y0,y1})); }
+  });
+  meios.forEach(it=>{
+    const gapStart=baixoY, gapEnd=cimaY, size=Math.max(0,gapEnd-gapStart);
+    const y0=gapStart+size/2-it.h/2, y1=y0+it.h;
+    placements.push(Object.assign({},it,{y0,y1}));
+  });
+  return {placements, freeStart:baixoY, freeEnd:Math.max(baixoY,cimaY)};
+}
+// Maleiro é sempre o item mais alto da coluna: processado primeiro entre os 'cima',
+// garantindo que fica no topo absoluto (acima de cabideiro/outros blocos 'cima').
+function sortBlocksMaleiroFirst(items){
+  return items.slice().sort((a,b)=>(a.b.kind==='maleiro'?-1:0)-(b.b.kind==='maleiro'?-1:0));
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════
+function getConfig(){
+  const preset=document.getElementById('sheetPreset').value;
+  let sw,sh;
+  if(preset==='custom'){sw=+document.getElementById('sheetW').value||2750;sh=+document.getElementById('sheetH').value||1850;}
+  else [sw,sh]=preset.split('x').map(Number);
+  const cubaPosSel=document.getElementById('cubaPos').value;
+  return {
+    type:         document.getElementById('fType').value,
+    W:            +document.getElementById('fW').value||800,
+    H:            +document.getElementById('fH').value||2200,
+    D:            +document.getElementById('fD').value||400,
+    nCols:        Math.max(1,+document.getElementById('nCols').value||1),
+    columns:      columns.map(c=>({doorType:c.doorType,shelves:c.shelves,blocks:c.blocks.map(b=>({...b}))})),
+    shelfD:       +document.getElementById('shelfD').value||0,
+    backType:       document.getElementById('backType').value,
+    latType:        document.getElementById('latType').value,
+    frontType:      document.getElementById('frontType').value,
+    baseType:       document.getElementById('baseType').value,
+    legsType:       document.getElementById('legsType').value,
+    legsH:          +document.getElementById('legsH').value||80,
+    legsW:          +document.getElementById('legsW').value||40,
+    cubaPos:      cubaPosSel,
+    cubaW:        cubaPosSel!=='none'?(+document.getElementById('cubaW').value||400):0,
+    cubaD:        cubaPosSel!=='none'?(+document.getElementById('cubaD').value||350):0,
+    thick:        +document.getElementById('thick').value||18,
+    kerf:         +document.getElementById('kerf').value||3,
+    price:        +document.getElementById('price').value||0,
+    sw,sh
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// PIECE CALCULATION
+// ═══════════════════════════════════════════════════════════
+function calcPieces(cfg){
+  const {type,W,H,D,nCols,columns:cols=[],shelfD,
+         thick:t,backType,latType,frontType,baseType,
+         cubaPos,cubaW,cubaD}=cfg;
+  const pieces=[]; let ci=0;
+  function add(name,w,h,qty){
+    if(w<=0||h<=0||qty<=0)return;
+    pieces.push({name,w:Math.round(w),h:Math.round(h),qty,color:COLORS[ci%COLORS.length]});
+    ci++;
+  }
+  const latN=latType==='ripado'?'Lateral Ripado':'Lateral';
+  const bakN=backType==='ripado'?'Fundo Ripado':'Fundo';
+
+  // PAINEL RIPADO — caso especial, sem colunas
+  if(type==='painel_ripado'){
+    const ripaW=80, gapW=15;
+    const nRipas=Math.max(1,Math.floor(W/(ripaW+gapW)));
+    add('Ripa',ripaW,H,nRipas);
+    add('Régua Fixação',W,40,2);
+    add('Régua Lateral',H-80,40,2);
+    return pieces;
+  }
+
+  const isCounter = type==='balcao'||type==='gabinete_banheiro';
+  const kick = isCounter ? Math.min(150,H*0.1) : 0;
+  const bodyH = H-kick;
+  const iW=Math.max(1,W-2*t), iH=Math.max(1,bodyH-2*t), iD=Math.max(1,D-t);
+  const effShelfD = shelfD>0 ? Math.min(shelfD,iD) : iD;
+
+  add(latN, D, bodyH, 2);
+  add('Tampo', iW, D, 1);
+  add('Base', iW, D, 1);
+  if(backType!=='none') add(bakN, W, bodyH, 1);
+  if(frontType==='mdf') add('Frente Painel', W, iH, 1);
+  else if(frontType==='ripado') add('Frente Painel Ripado', W, iH, 1);
+  if(isCounter) add('Rodapé', iW, kick, 1);
+
+  const nDiv=Math.max(0,nCols-1);
+  if(nDiv>0) add('Divisória', iH, iD, nDiv);
+
+  const colW = nCols>0 ? (iW-nDiv*t)/nCols : iW;
+  const gap=t;
+
+  cols.forEach(col=>{
+    const items=sortBlocksMaleiroFirst((col.blocks||[]).map(b=>{
+      let hMM = b.kind==='gaveteiro'?(b.unitH||300):b.kind==='cabideiro'?(b.unitH||1100):(b.unitH||350);
+      hMM=Math.min(hMM, iH*0.92);
+      // Maleiro fica sempre no topo absoluto da coluna, nunca é editável
+      return {b, h:hMM, vertPos: b.kind==='maleiro' ? 'cima' : (b.vertPos||'baixo')};
+    }));
+    const {placements,freeStart,freeEnd}=layoutColumn(items, iH, gap);
+
+    placements.forEach(p=>{
+      const b=p.b, blockH=p.y1-p.y0;
+      if(b.kind==='gaveteiro'){
+        const {qty=1,sentido='horizontal',doorType:dt='mdf',depth:dep=0}=b;
+        if(qty<=0)return;
+        const perH=blockH/Math.max(1,qty);
+        const oneW = sentido==='vertical'&&qty>1? colW/qty : colW;
+        const effD = dep>0?Math.min(dep,iD):iD-10;
+        const nm={mdf:'Frente Gaveta',frente:'Frente Gaveta',ripado:'Frente Gaveta Ripado'}[dt]||'Frente Gaveta';
+        add(nm, oneW-2, perH, qty);
+        add('Lateral Gaveta', effD, perH-t, 2*qty);
+        add('Fundo Gaveta', oneW-2*t, effD, qty);
+        add('Traseira Gaveta', oneW-2*t, perH-t, qty);
+        if(sentido==='vertical'&&qty>1) add('Divisória Gavetas', blockH-2*t, effD, qty-1);
+      } else if(b.kind==='cabideiro'){
+        const {nRods=1}=b;
+        add('Prateleira Cabides', colW, effShelfD, 1);
+        if(nRods>1) add('Divisória Cabideiro', blockH, iD-10, nRods-1);
+      } else if(b.kind==='sapateira'){
+        const vaos=Math.max(1,b.vaos||1);
+        if(vaos>1) add('Prateleira Sapateira', colW, effShelfD, vaos-1);
+      } else if(b.kind==='maleiro'){
+        const {doorType:dt='none'}=b;
+        add('Prateleira Maleiro', colW, t, 1);
+        if(dt!=='none'){
+          const nm={mdf:'Porta Maleiro',frente:'Porta Maleiro',ripado:'Porta Maleiro Ripado'}[dt]||'Porta Maleiro';
+          add(nm, colW-2, blockH-2, 1);
+        }
+      }
+    });
+
+    // Porta da coluna: SEMPRE cobre a coluna inteira (piso ao teto), na frente de tudo —
+    // gaveteiro/cabideiro/maleiro ficam escondidos atrás, como um armário de porta batente.
+    if(col.doorType && col.doorType!=='none'){
+      const dt=col.doorType;
+      const nm={mdf:'Porta',frente:'Frente',glass:'Porta Vidro*',espelho:'Porta Espelho*',ripado:'Porta Ripado'}[dt]||'Porta';
+      add(nm, colW-2, iH, 1);
+    }
+    // Prateleiras continuam só no vão livre (onde não há gaveteiro/cabideiro/maleiro)
+    const freeH=Math.max(0,freeEnd-freeStart);
+    if(col.shelves>0 && freeH>10){
+      add('Prateleira', colW, effShelfD, col.shelves);
+    }
+  });
+
+  // Base (plinto) estrutural
+  if(baseType==='com'){
+    const baseHt=100;
+    add('Base Lateral', D, baseHt, 2);
+    add('Base Frente', W-2*t, baseHt, 1);
+    add('Base Fundo', W-2*t, baseHt, 1);
+  }
+
+  return pieces;
+}
+
+// ═══════════════════════════════════════════════════════════
+// BIN PACKING — Guillotine BSSF
+// ═══════════════════════════════════════════════════════════
+class Sheet{
+  constructor(sw,sh){this.sw=sw;this.sh=sh;this.free=[{x:0,y:0,w:sw,h:sh}];this.placed=[];}
+  tryPlace(p,kerf){
+    const pw=p.w+kerf,ph=p.h+kerf;
+    let bi=-1,bs=Infinity,bRot=false;
+    for(let i=0;i<this.free.length;i++){
+      const r=this.free[i];
+      if(pw<=r.w&&ph<=r.h){const sc=r.w*r.h;if(sc<bs){bs=sc;bi=i;bRot=false;}}
+      if(ph<=r.w&&pw<=r.h){const sc=r.w*r.h;if(sc<bs){bs=sc;bi=i;bRot=true;}}
+    }
+    if(bi===-1)return false;
+    const r=this.free[bi];
+    const uw=bRot?ph:pw,uh=bRot?pw:ph;
+    this.placed.push({name:p.name,color:p.color,x:r.x,y:r.y,w:bRot?p.h:p.w,h:bRot?p.w:p.h,rotated:bRot});
+    const nr=[];
+    if(r.h-uh>kerf)nr.push({x:r.x,y:r.y+uh,w:r.w,h:r.h-uh});
+    if(r.w-uw>kerf)nr.push({x:r.x+uw,y:r.y,w:r.w-uw,h:uh});
+    this.free.splice(bi,1,...nr);
+    return true;
+  }
+  usedArea(){return this.placed.reduce((s,p)=>s+p.w*p.h,0);}
+  efficiency(){return(this.usedArea()/(this.sw*this.sh)*100).toFixed(1);}
+}
+
+function packAll(pieces,sw,sh,kerf){
+  const flat=[];
+  pieces.forEach(p=>{for(let i=0;i<p.qty;i++)flat.push({name:p.name,w:p.w,h:p.h,color:p.color});});
+  flat.sort((a,b)=>b.w*b.h-a.w*a.h);
+  const sheets=[],unplaced=[];
+  for(const p of flat){
+    if(p.name.endsWith('*')){continue;} // peças sob encomenda (vidro/espelho) — não cortadas do MDF
+    const fN=(p.w+kerf)<=sw&&(p.h+kerf)<=sh;
+    const fR=(p.h+kerf)<=sw&&(p.w+kerf)<=sh;
+    if(!fN&&!fR){unplaced.push(p);continue;}
+    let ok=false;
+    for(const s of sheets){if(s.tryPlace(p,kerf)){ok=true;break;}}
+    if(!ok){const ns=new Sheet(sw,sh);ns.tryPlace(p,kerf);sheets.push(ns);}
+  }
+  return{sheets,unplaced};
+}
+
+// ═══════════════════════════════════════════════════════════
+// CALCULATE
+// ═══════════════════════════════════════════════════════════
+function calculate(){
+  const cfg=getConfig();
+  if(cfg.W<=0||cfg.H<=0||cfg.D<=0){alert('Insira dimensões válidas!');return;}
+  const pieces=calcPieces(cfg);
+  if(!pieces.length){alert('Nenhuma peça gerada.');return;}
+  const {sheets,unplaced}=packAll(pieces,cfg.sw,cfg.sh,cfg.kerf);
+  const totalPieces=pieces.reduce((s,p)=>s+p.qty,0);
+  const totalUsed=sheets.reduce((s,sh)=>s+sh.usedArea(),0);
+  const totalAvail=sheets.length*cfg.sw*cfg.sh;
+  const eff=totalAvail>0?(totalUsed/totalAvail*100).toFixed(1):'0';
+  const cost=sheets.length*cfg.price;
+  projectData={cfg,pieces,sheets,unplaced,totalPieces,eff,cost};
+
+  document.getElementById('statsSection').style.display='block';
+  document.getElementById('sSheets').textContent=sheets.length;
+  document.getElementById('sEff').textContent=eff+'%';
+  document.getElementById('sPieces').textContent=totalPieces;
+  document.getElementById('sCost').textContent='R$'+cost.toFixed(0);
+
+  const wb=document.getElementById('warnBox');
+  if(unplaced.length>0){
+    wb.style.display='block';
+    wb.innerHTML='⚠️ '+unplaced.length+' peça(s) não encaixam na chapa:<br>'+
+      unplaced.map(p=>`• ${p.name} (${p.w}×${p.h}mm)`).join('<br>');
+  } else wb.style.display='none';
+
+  update3D(cfg);
+  updateMap(sheets,cfg);
+  updatePieces(pieces,cfg);
+  updatePanelTags(cfg);
+}
+
+// ═══════════════════════════════════════════════════════════
+// THREE.JS — INIT
+// ═══════════════════════════════════════════════════════════
+function init3D(){
+  const canvas=document.getElementById('canvas3d');
+  if(!canvas.clientWidth)return;
+  renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate=false; // sombra só recalcula quando o modelo muda, não a cada frame de câmera
+  renderer.physicallyCorrectLights=true;
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x0C0C18);
+  scene.fog=new THREE.FogExp2(0x0C0C18,0.025);
+  const asp=canvas.clientWidth/canvas.clientHeight;
+  camera=new THREE.PerspectiveCamera(40,asp,0.01,200);
+  resizeRenderer();
+
+  scene.add(new THREE.AmbientLight(0xFFEED0,0.38));
+  const sun=new THREE.DirectionalLight(0xFFF5E0,1.3);
+  sun.position.set(5,10,7);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+  sun.shadow.camera.near=0.1;sun.shadow.camera.far=50;scene.add(sun);
+  const fill=new THREE.DirectionalLight(0xB0C8FF,0.28);fill.position.set(-6,4,-5);scene.add(fill);
+  const rim=new THREE.DirectionalLight(0xFFD8A0,0.18);rim.position.set(0,2,-8);scene.add(rim);
+  const floorGeo=new THREE.PlaneGeometry(20,20);
+  const floorMat=new THREE.MeshPhongMaterial({color:0x151520,shininess:8,specular:0x111122});
+  const floor=new THREE.Mesh(floorGeo,floorMat);
+  floor.rotation.x=-Math.PI/2;floor.position.y=-0.005;floor.receiveShadow=true;scene.add(floor);
+  const grid=new THREE.GridHelper(18,36,0x1E1E32,0x191928);grid.position.y=0.001;scene.add(grid);
+  raycaster3d=new THREE.Raycaster();
+  mouse3d=new THREE.Vector2();
+
+  canvas.addEventListener('mousedown',e=>{isDrag=true;prevMouse={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mouseup',()=>isDrag=false);
+  canvas.addEventListener('mousemove',e=>{
+    if(!isDrag)return;
+    camSph.theta-=(e.clientX-prevMouse.x)*0.007;
+    camSph.phi=clamp(camSph.phi-(e.clientY-prevMouse.y)*0.007,0.05,Math.PI/2-0.05);
+    prevMouse={x:e.clientX,y:e.clientY};renderScene();
+  });
+  canvas.addEventListener('wheel',e=>{camSph.r=clamp(camSph.r+e.deltaY*0.004,1.2,18);renderScene();},{passive:true});
+
+  let lt=null;
+  canvas.addEventListener('touchstart',e=>{isDrag=true;lt={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  canvas.addEventListener('touchmove',e=>{
+    if(!isDrag||!lt)return;e.preventDefault();
+    camSph.theta-=(e.touches[0].clientX-lt.x)*0.009;
+    camSph.phi=clamp(camSph.phi-(e.touches[0].clientY-lt.y)*0.009,0.05,Math.PI/2-0.05);
+    lt={x:e.touches[0].clientX,y:e.touches[0].clientY};renderScene();
+  },{passive:false});
+  canvas.addEventListener('touchend',()=>{isDrag=false;lt=null;});
+
+  hoverBoxMesh=makeHighlightBox(0xFFC862,0.30);
+  selectBoxMesh=makeHighlightBox(0xFF9A30,0.42);
+  let lastHoverTime=0;
+  canvas.addEventListener('mousemove',e=>{
+    if(isDrag)return;
+    const now=Date.now();if(now-lastHoverTime<40)return;lastHoverTime=now;
+    const rect=canvas.getBoundingClientRect();
+    mouse3d.x=((e.clientX-rect.left)/rect.width)*2-1;
+    mouse3d.y=-((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster3d.setFromCamera(mouse3d,camera);
+    const allMeshes=Object.values(meshGroups).flat().filter(m=>m.visible&&m.isMesh);
+    const hits=raycaster3d.intersectObjects(allMeshes);
+    const label=document.getElementById('hover3d-label');
+    if(hits.length>0){
+      const m=hits[0].object;
+      hoveredMesh=m;
+      if(m!==selectedMesh) fitHighlight(hoverBoxMesh,m); else hoverBoxMesh.visible=false;
+      canvas.style.cursor='pointer';
+      label.style.display='block';
+      label.style.left=(e.clientX-rect.left+12)+'px';
+      label.style.top=(e.clientY-rect.top-22)+'px';
+      label.textContent=getGroupLabel(m);
+      renderScene();
+    } else {
+      hoveredMesh=null;
+      hoverBoxMesh.visible=false;
+      canvas.style.cursor=isDrag?'grabbing':'grab';
+      label.style.display='none';
+      renderScene();
+    }
+  });
+
+  canvas.addEventListener('click',e=>{
+    if(Math.abs(e.movementX)+Math.abs(e.movementY)>5)return;
+    const rect=canvas.getBoundingClientRect();
+    mouse3d.x=((e.clientX-rect.left)/rect.width)*2-1;
+    mouse3d.y=-((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster3d.setFromCamera(mouse3d,camera);
+    const allMeshes=Object.values(meshGroups).flat().filter(m=>m.visible&&m.isMesh);
+    const hits=raycaster3d.intersectObjects(allMeshes);
+    selectedMesh=null;
+    selectBoxMesh.visible=false;
+    if(hits.length>0){
+      const m=hits[0].object;
+      selectedMesh=m;
+      fitHighlight(selectBoxMesh,m);
+      hoverBoxMesh.visible=false;
+      showEdit3D(m);
+      renderScene();
+    } else {
+      document.getElementById('edit3d-panel').style.display='none';
+      renderScene();
+    }
+  });
+
+  renderScene();
+}
+
+function makeHighlightBox(color,opacity){
+  const geo=new THREE.BoxGeometry(1,1,1);
+  const mat=new THREE.MeshBasicMaterial({color,transparent:true,opacity,depthWrite:false});
+  const m=new THREE.Mesh(geo,mat);
+  m.visible=false;m.renderOrder=10;
+  scene.add(m);
+  return m;
+}
+function fitHighlight(box,mesh){
+  const p=mesh.geometry.parameters||{};
+  box.position.copy(mesh.position);
+  box.rotation.copy(mesh.rotation);
+  box.scale.set(Math.max(p.width||0.001,0.001)*1.05,Math.max(p.height||0.001,0.001)*1.05,Math.max(p.depth||0.001,0.001)*1.05);
+  box.visible=true;
+}
+function clamp(v,mn,mx){return Math.max(mn,Math.min(mx,v));}
+function resizeRenderer(){
+  const c=document.getElementById('canvas3d');
+  if(!renderer||!camera||!c.clientWidth)return;
+  renderer.setSize(c.clientWidth,c.clientHeight);
+  camera.aspect=c.clientWidth/c.clientHeight;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',()=>{resizeRenderer();renderScene();});
+
+function renderScene(){
+  if(!renderer||!scene||!camera)return;
+  const {theta,phi,r}=camSph;
+  camera.position.set(r*Math.sin(phi)*Math.sin(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.cos(theta));
+  camera.lookAt(0,0,0);
+  renderer.render(scene,camera);
+}
+function requestShadowUpdate(){ if(renderer) renderer.shadowMap.needsUpdate=true; }
+function resetCam(){camSph={theta:0.75,phi:0.48,r:5};renderScene();}
+
+// ═══════════════════════════════════════════════════════════
+// THREE.JS — MATERIALS / HELPERS
+// ═══════════════════════════════════════════════════════════
+function mkMat(color,opacity=1,shin=28){
+  return new THREE.MeshPhongMaterial({color,shininess:shin,specular:0x181008,transparent:opacity<1,opacity});
+}
+function mkGlassMat(tint=0xB8D8F0,op=0.28){
+  return new THREE.MeshPhongMaterial({color:tint,shininess:180,specular:0xFFFFFF,transparent:true,opacity:op,side:THREE.DoubleSide});
+}
+function mkMetalMat(color=0xAAAAAA){
+  return new THREE.MeshPhongMaterial({color,shininess:90,specular:0xEEEEEE});
+}
+function mkCeramicMat(color=0xF0F4F8){
+  return new THREE.MeshPhongMaterial({color,shininess:120,specular:0xDDEEFF});
+}
+function addBox(grp,x,y,z,w,h,d,mat){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+  m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;
+  scene.add(m);grp.push(m);return m;
+}
+function clearMeshes(){
+  Object.values(meshGroups).flat().forEach(m=>{scene.remove(m);if(m.geometry)m.geometry.dispose();if(m.material&&m.material.dispose)m.material.dispose();});
+  meshGroups={base:[],doors:[],drawers:[],shelves:[],cuba:[],maleiro:[],cabideiro:[]};
+  groupVisible={doors:true,drawers:true,shelves:true,cuba:true,maleiro:true,cabideiro:true};
+  hoveredMesh=null; selectedMesh=null;
+  if(hoverBoxMesh)hoverBoxMesh.visible=false;
+  if(selectBoxMesh)selectBoxMesh.visible=false;
+  document.getElementById('edit3d-panel').style.display='none';
+  document.getElementById('hover3d-label').style.display='none';
+  ['doorToggleBtn','drawerToggleBtn','shelfToggleBtn'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){const txt=el.textContent;el.textContent=txt.replace('Mostrar','Ocultar');}
+  });
+}
+function addRipadoSurface(grp,cx,cy,cz,w,h,depth,col){
+  const ripaW=Math.max(depth*0.85,w*0.032);
+  const gap=ripaW*0.38;
+  const step=ripaW+gap;
+  const nR=Math.max(1,Math.round(w/step));
+  const totalW=nR*step-gap;
+  addBox(grp,cx,cy,cz-depth*0.5,w,h,depth*0.22,mkMat(col-0x202020));
+  for(let i=0;i<nR;i++){
+    addBox(grp,cx-totalW/2+ripaW/2+i*step,cy,cz,ripaW,h,depth,mkMat(col,1,18));
+  }
+}
+function addDoor(DA,dx,doorCY,doorDZ,dw,dh,doorType){
+  const gap=dw*0.012, th=dh*0.012;
+  if(doorType==='glass'){
+    addBox(DA,dx,doorCY,doorDZ,dw-gap,dh,th*0.5,mkGlassMat());
+    addBox(DA,dx,doorCY+dh/2-th*0.6,doorDZ,dw-gap,th*1.1,th*0.5,mkMat(0x909090));
+    addBox(DA,dx,doorCY-dh/2+th*0.6,doorDZ,dw-gap,th*1.1,th*0.5,mkMat(0x909090));
+    addBox(DA,dx-dw/2+th*0.9,doorCY,doorDZ,th*1.1,dh,th*0.5,mkMat(0x909090));
+    addBox(DA,dx+dw/2-th*0.9,doorCY,doorDZ,th*1.1,dh,th*0.5,mkMat(0x909090));
+  } else if(doorType==='espelho'){
+    addBox(DA,dx,doorCY,doorDZ,dw-gap,dh,th*0.5,mkMat(0xC8D4DC,0.92,150));
+    addBox(DA,dx,doorCY+dh/2-th*0.6,doorDZ,dw-gap,th*1.1,th*0.5,mkMat(0x909090));
+    addBox(DA,dx,doorCY-dh/2+th*0.6,doorDZ,dw-gap,th*1.1,th*0.5,mkMat(0x909090));
+    addBox(DA,dx-dw/2+th*0.9,doorCY,doorDZ,th*1.1,dh,th*0.5,mkMat(0x909090));
+    addBox(DA,dx+dw/2-th*0.9,doorCY,doorDZ,th*1.1,dh,th*0.5,mkMat(0x909090));
+  } else if(doorType==='ripado'){
+    addRipadoSurface(DA,dx,doorCY,doorDZ-th*0.5,dw-gap,dh,th*1.2,0xC47222);
+  } else if(doorType==='frente'){
+    addBox(DA,dx,doorCY,doorDZ,dw-gap,dh,th,mkMat(0xD8C09A,1,55));
+    addBox(DA,dx,doorCY-dh*0.4,doorDZ+th*0.55,dw*0.45,th*0.6,th*0.3,mkMat(0x9A7850));
+  } else {
+    const hSide=(DA.length%2===0)?1:-1;
+    addBox(DA,dx,doorCY,doorDZ,dw-gap,dh,th,mkMat(0x8B5532,0.9,42));
+    addBox(DA,dx+dw*0.33*hSide,doorCY,doorDZ+th*0.9,dw*0.04,dh*0.12,th*1.2,mkMetalMat());
+  }
+}
+function addDrawerUnit(B,DA,DR,cx,cy,cz,dw,dh,dd,tk,doorType){
+  addBox(DR,cx,cy,cz-dd*0.06,dw-tk*0.18,dh-tk*0.22,dd*0.82,mkMat(0x6A3C15));
+  addBox(DR,cx-dw*0.49,cy,cz,tk*0.1,tk*0.18,dd,mkMetalMat(0x909090));
+  addBox(DR,cx+dw*0.49,cy,cz,tk*0.1,tk*0.18,dd,mkMetalMat(0x909090));
+  const fz=cz+dd/2+tk*0.12;
+  if(doorType==='glass'){
+    addBox(DA,cx,cy,fz,dw-tk*.06,dh,tk*.75,mkGlassMat(0xC0E8F0,0.35));
+    addBox(DA,cx,cy+dh/2-tk*.1,fz,dw-tk*.06,tk*.18,tk*.75,mkMat(0x888888));
+    addBox(DA,cx,cy-dh/2+tk*.1,fz,dw-tk*.06,tk*.18,tk*.75,mkMat(0x888888));
+    addBox(DA,cx-dw/2+tk*.15,cy,fz,tk*.18,dh,tk*.75,mkMat(0x888888));
+    addBox(DA,cx+dw/2-tk*.15,cy,fz,tk*.18,dh,tk*.75,mkMat(0x888888));
+  } else if(doorType==='ripado'){
+    addRipadoSurface(DA,cx,cy,fz,dw-tk*.06,dh,tk*0.8,0xC47222);
+  } else if(doorType==='frente'){
+    addBox(DA,cx,cy,fz,dw-tk*.06,dh,tk*0.85,mkMat(0xD4B896,1,50));
+    addBox(DA,cx,cy-dh*0.38,fz+tk*0.45,dw*0.32,tk*0.1,tk*0.06,mkMat(0x9A7850));
+  } else {
+    addBox(DA,cx,cy,fz,dw-tk*.06,dh,tk*0.85,mkMat(0xC47222,1,38));
+    addBox(DA,cx,cy,fz+tk*0.5,dw*0.3,tk*0.15,tk*0.22,mkMetalMat(0xBBBBBB));
+  }
+}
+function addSink(cubaGrp,counterTopY,innerW,innerD,cubaWmm,cubaDmm,cubaPosSt,s){
+  const cW=Math.min(cubaWmm*s,innerW*0.9);
+  const cDep=Math.min(cubaDmm*s,innerD*0.88);
+  const cH=Math.min(0.18,cubaWmm*s*0.35);
+  let sinkX=0;
+  if(cubaPosSt==='left') sinkX=-innerW/2+cW/2+0.018;
+  if(cubaPosSt==='right') sinkX=innerW/2-cW/2-0.018;
+  addBox(cubaGrp,sinkX,counterTopY-cH/2,0,cW,cH,cDep,mkCeramicMat(0xEEF2F8));
+  addBox(cubaGrp,sinkX,counterTopY-cH+0.005,-0.002,cW*0.88,0.008,cDep*0.86,mkCeramicMat(0xD0D8E8));
+  addBox(cubaGrp,sinkX,counterTopY-cH+0.003,0,0.018,0.005,0.018,mkMetalMat(0x888888));
+  const fZ=-innerD*0.28;
+  const fH=cH*0.8+0.04;
+  addBox(cubaGrp,sinkX,counterTopY+fH/2,fZ,0.012,fH,0.012,mkMetalMat(0xC8C8C8));
+  addBox(cubaGrp,sinkX,counterTopY+fH+0.012,fZ+innerD*0.08,0.012,0.012,innerD*0.16,mkMetalMat(0xC8C8C8));
+  addBox(cubaGrp,sinkX-cW*0.28,counterTopY+fH*0.7,fZ,0.03,0.010,0.010,mkMetalMat(0xC8C8C8));
+  addBox(cubaGrp,sinkX+cW*0.28,counterTopY+fH*0.7,fZ,0.03,0.010,0.010,mkMetalMat(0xC8C8C8));
+}
+
+// ═══════════════════════════════════════════════════════════
+// THREE.JS — BUILD MODEL
+// ═══════════════════════════════════════════════════════════
+function update3D(cfg){
+  if(!scene){init3D();if(!scene)return;}
+  document.getElementById('empty-3d').style.display='none';
+  clearMeshes();
+
+  const {type,W,H,D,nCols,columns:cols=[],shelfD:shelfDmm,
+         thick,backType,latType,frontType,baseType,legsType,
+         legsH:legsHmm,legsW:legsWmm,cubaPos,cubaW,cubaD}=cfg;
+  const t=thick;
+  const maxDim=Math.max(W,H,D);
+  const s=2.4/maxDim;
+  currentS=s;
+
+  const wMat=mkMat(0xC47222,1,35), wDark=mkMat(0x8A4E18,1,20);
+  const wPanel=mkMat(0xBB7A32,1,30);
+  const backMat=mkMat(0xD4B896,1,18), topMat=mkMat(0xD4A040,1,25), kickMat=mkMat(0x7A4A18);
+  const rodMat=mkMetalMat(0xBBBBBB);
+  const B=meshGroups.base, DA=meshGroups.doors, DR=meshGroups.drawers;
+  const SH=meshGroups.shelves, CU=meshGroups.cuba, CA=meshGroups.cabideiro, MA=meshGroups.maleiro;
+
+  // PAINEL RIPADO — caso especial
+  if(type==='painel_ripado'){
+    const [w,h,d,tk]=[W*s,H*s,D*s,t*s];
+    addRipadoSurface(B,0,0,0,w,h,d,0xC47222);
+    addBox(B,0,h/2+tk*.4,0,w,tk*.8,d*.3,wDark);
+    addBox(B,0,-h/2-tk*.4,0,w,tk*.8,d*.3,wDark);
+    addBox(B,-w/2-tk*.4,0,0,tk*.8,h,d*.3,wDark);
+    addBox(B,w/2+tk*.4,0,0,tk*.8,h,d*.3,wDark);
+    camSph.r=Math.max(2,Math.min(8,Math.max(w,h,d)*2));
+    requestShadowUpdate();renderScene();return;
+  }
+
+  const isCounter=type==='balcao'||type==='gabinete_banheiro';
+  const legsOffset=(legsType==='com')?(legsHmm*s):0;
+  const baseH=100*s;
+  const [w,fullH,d,tk]=[W*s,H*s,D*s,t*s];
+  const kick=isCounter?Math.min(150*s,fullH*0.1):0;
+  const bodyH=fullH-kick;
+  const iw=w-2*tk, ih=bodyH-2*tk, id=d-tk;
+  const effShelfD3d = shelfDmm>0 ? Math.min(shelfDmm*s, id) : id;
+  const yOff=legsOffset+(baseType==='com'?baseH:0);
+  const bodyCY=yOff+kick+bodyH/2;
+
+  function lat(x,y,z,lw,lh,ld){
+    if(latType==='ripado')addRipadoSurface(B,x,y,z,lw,lh,ld,0xC47222);
+    else addBox(B,x,y,z,lw,lh,ld,wMat);
+  }
+  function bk(x,y,z,bw,bh,bd){
+    if(backType==='none')return;
+    if(backType==='ripado')addRipadoSurface(B,x,y,z,bw,bh,bd,0xC07020);
+    else addBox(B,x,y,z,bw,bh,bd,backMat);
+  }
+  function fr(x,y,z,fw,fh,fd){
+    if(frontType==='none')return;
+    if(frontType==='ripado') addRipadoSurface(B,x,y,z+fd/2+tk*.15,fw,fh,tk*.3,0xC47222);
+    else addBox(B,x,y,z+fd/2+tk*.1,fw,fh,tk*.25,mkMat(0xD4B896,0.85,30));
+  }
+  function addLegs(botY,fw,fd){
+    if(legsType!=='com')return;
+    const legH=legsHmm*s, legW=legsWmm*s;
+    const lMat=mkMat(0x4A3020,1,60);
+    const ox=(fw/2-legW), oz=(fd/2-legW);
+    [[-ox,-oz],[ox,-oz],[-ox,oz],[ox,oz]].forEach(([lx,lz])=>{
+      addBox(B,lx,botY-legH/2,lz,legW,legH,legW,lMat);
+    });
+  }
+  function addBase(botY,fw,fd){
+    if(baseType!=='com')return;
+    addBox(B,0,botY-baseH/2,0,fw,baseH,fd,mkMat(0x6A3C15,1,15));
+  }
+
+  lat(-w/2+tk/2,bodyCY,0,tk,bodyH,d); lat(w/2-tk/2,bodyCY,0,tk,bodyH,d);
+  addBox(B,0,bodyCY+bodyH/2-tk/2,0,iw,tk,d,isCounter?mkMat(type==='gabinete_banheiro'?0xF5F5F5:0xE8D4B0,1,30):topMat);
+  addBox(B,0,bodyCY-bodyH/2+tk/2,0,iw,tk,d,wDark);
+  bk(0,bodyCY,-d/2+tk*.12,w,bodyH,tk*.28);
+  fr(0,bodyCY,0,iw,ih,d);
+  if(isCounter) addBox(B,0,yOff+kick/2,d/2-tk*.4,iw,kick,tk*.8,kickMat);
+
+  const nDiv=Math.max(0,nCols-1);
+  const colW = nCols>0 ? (iw-nDiv*tk)/nCols : iw;
+  const intBotY=bodyCY-ih/2;
+  for(let i=1;i<=nDiv;i++){
+    const x=-iw/2+i*(colW+tk)-tk/2;
+    addBox(B,x,bodyCY,0,tk,ih,id,wDark);
+  }
+
+  // Gaveteiro block renderer
+  function addGaveteiroBlock3D(colCX,baseY,blockH,colWd,idScene,b){
+    const qty=Math.max(1,b.qty||1), sentido=b.sentido||'horizontal', dt=b.doorType||'mdf';
+    const depMM=b.depth||0;
+    const effD=depMM>0?Math.min(depMM*s,idScene):idScene-10*s;
+    if(sentido==='vertical'&&qty>1){
+      const sW=colWd/qty;
+      for(let i=0;i<qty;i++){
+        const dx=colCX-colWd/2+sW/2+i*sW;
+        addDrawerUnit(B,DA,DR,dx,baseY+blockH/2,0,sW,blockH,effD,tk,dt);
+      }
+    } else {
+      const perH=blockH/qty;
+      for(let i=0;i<qty;i++){
+        const dy=baseY+perH/2+i*(perH+tk*0.1);
+        addDrawerUnit(B,DA,DR,colCX,dy,0,colWd,perH,effD,tk,dt);
+      }
+    }
+  }
+  // Cabideiro block renderer
+  function addCabideiroBlock3D(colCX,baseY,blockH,colWd,idScene,b){
+    const nRods=Math.max(1,b.nRods||1);
+    const topShelfY=baseY+blockH;
+    const effShelf=Math.min(effShelfD3d,idScene);
+    addBox(CA,colCX,topShelfY,-(idScene-effShelf)/2,colWd,tk,effShelf,wPanel);
+    // Barra fixa a 10cm do topo do bloco (seja o teto do armário ou a base de um maleiro acima)
+    const ROD_DROP_MM=100;
+    const rodY=Math.max(baseY+tk*0.5, topShelfY-ROD_DROP_MM*s);
+    if(nRods>1){
+      const cW=colWd/nRods;
+      for(let i=1;i<nRods;i++) addBox(CA,colCX-colWd/2+cW*i,baseY+blockH/2,0,tk,blockH,idScene,wDark);
+      for(let i=0;i<nRods;i++){
+        const rx=colCX-colWd/2+cW*(i+.5);
+        addBox(CA,rx,rodY,0,cW-tk*2,tk*0.4,tk*0.4,rodMat);
+      }
+    } else {
+      addBox(CA,colCX,rodY,0,colWd-tk*2,tk*0.4,tk*0.4,rodMat);
+    }
+  }
+  // Maleiro block renderer
+  function addMaleiroBlock3D(colCX,baseY,blockH,colWd,idScene,dScene,b){
+    const dt=b.doorType||'none';
+    const midY=baseY+blockH/2;
+    addBox(MA,colCX,baseY,0,colWd,tk,idScene,wDark);
+    addBox(MA,colCX,midY,-idScene*0.45,colWd-tk*0.1,blockH,tk*0.4,mkMat(0x7A5228,1,8));
+    if(dt!=='none') addDoor(MA,colCX,midY,dScene/2+tk*.55,colWd,blockH,dt);
+  }
+  // Sapateira — divide a altura do bloco em N vãos iguais, com prateleiras entre eles
+  function addSapateiraBlock3D(colCX,baseY,blockH,colWd,idScene,b){
+    const vaos=Math.max(1,b.vaos||1);
+    const vaoH=blockH/vaos;
+    addBox(SH,colCX,baseY,0,colWd,tk,idScene,wDark); // base do bloco
+    for(let i=1;i<vaos;i++){
+      addBox(SH,colCX,baseY+vaoH*i,0,colWd,tk,idScene,wPanel);
+    }
+    addBox(SH,colCX,baseY+blockH,0,colWd,tk,idScene,wDark); // topo do bloco
+  }
+
+  // Build each column independently — fixes door/gaveteiro mismatch bugs
+  for(let c=0;c<nCols;c++){
+    const col=cols[c]||defaultColumn();
+    const colCX=-iw/2+c*(colW+tk)+colW/2;
+    const items=sortBlocksMaleiroFirst((col.blocks||[]).map(b=>{
+      let hMM=b.kind==='gaveteiro'?(b.unitH||300):b.kind==='cabideiro'?(b.unitH||1100):(b.unitH||350);
+      const hScene=Math.min(hMM*s, ih*0.92);
+      // Maleiro fica sempre no topo absoluto da coluna, nunca é editável
+      return {b, h:hScene, vertPos: b.kind==='maleiro' ? 'cima' : (b.vertPos||'baixo')};
+    }));
+    const {placements,freeStart,freeEnd}=layoutColumn(items, ih, tk);
+
+    placements.forEach(p=>{
+      const baseY=intBotY+p.y0, blockH=p.y1-p.y0;
+      if(p.b.kind==='gaveteiro') addGaveteiroBlock3D(colCX,baseY,blockH,colW,id,p.b);
+      else if(p.b.kind==='cabideiro') addCabideiroBlock3D(colCX,baseY,blockH,colW,id,p.b);
+      else if(p.b.kind==='sapateira') addSapateiraBlock3D(colCX,baseY,blockH,colW,id,p.b);
+      else if(p.b.kind==='maleiro') addMaleiroBlock3D(colCX,baseY,blockH,colW,id,d,p.b);
+    });
+
+    // Porta da coluna: SEMPRE cobre a coluna inteira (piso ao teto), na frente de tudo —
+    // esconde gaveteiro/cabideiro/maleiro atrás dela, como um armário de porta batente.
+    const dt=col.doorType||'mdf';
+    if(dt!=='none') addDoor(DA,colCX,bodyCY,d/2+tk*0.55,colW,ih,dt);
+
+    // Prateleiras continuam só no vão livre (onde não há gaveteiro/cabideiro/maleiro)
+    const freeH=freeEnd-freeStart;
+    const shelves=col.shelves||0;
+    if(freeH>tk && shelves>0){
+      const effShelf=Math.min(effShelfD3d,id);
+      for(let i=1;i<=shelves;i++){
+        const y=intBotY+freeStart+(freeH/(shelves+1))*i;
+        addBox(SH,colCX,y,-(id-effShelf)/2,colW,tk,effShelf,wPanel);
+      }
+    }
+  }
+
+  // Cuba / Sink (balcão / gabinete banheiro)
+  if(isCounter && cubaPos && cubaPos!=='none' && cubaW>0){
+    const counterTopY=bodyCY+bodyH/2-tk/2;
+    addSink(CU,counterTopY,iw,id,cubaW,cubaD||350,cubaPos,s);
+    document.getElementById('cubaToggleBtn').style.display='';
+  }
+
+  addLegs(yOff,w,d); addBase(yOff,w,d);
+  camSph.r=Math.max(2.5,Math.min(9,Math.max(w,fullH,d)*2.2));
+  requestShadowUpdate();renderScene();
+}
+
+// ═══════════════════════════════════════════════════════════
+// 3D EDITING HELPERS
+// ═══════════════════════════════════════════════════════════
+const _groupMeta={
+  base:    {icon:'🪵',label:'Estrutura'},
+  doors:   {icon:'🚪',label:'Porta'},
+  drawers: {icon:'🗄',label:'Gaveta'},
+  shelves: {icon:'📦',label:'Prateleira'},
+  cuba:    {icon:'🚰',label:'Cuba'},
+  maleiro: {icon:'🧳',label:'Maleiro'},
+  cabideiro:{icon:'👔',label:'Cabideiro'},
+};
+function getMeshGroup(mesh){
+  for(const [name,arr] of Object.entries(meshGroups)){if(arr.includes(mesh))return name;}
+  return 'base';
+}
+function getGroupLabel(mesh){
+  const g=getMeshGroup(mesh);
+  const m=_groupMeta[g]||{icon:'🪵',label:'Peça'};
+  return m.icon+' '+m.label;
+}
+function showEdit3D(mesh){
+  const g=getMeshGroup(mesh);
+  const meta=_groupMeta[g]||{icon:'🪵',label:'Peça'};
+  const geo=mesh.geometry.parameters;
+  const toMM=v=>Math.round(Math.abs(v)/Math.max(currentS,0.0001));
+  const dims=geo?`${toMM(geo.width||0)} × ${toMM(geo.height||0)} × ${toMM(geo.depth||0)} mm`:'';
+  document.getElementById('edit3d-title').innerHTML=`${meta.icon} ${meta.label}`;
+  document.getElementById('edit3d-dims').textContent=dims||'';
+  const actions=document.getElementById('edit3d-actions');
+  actions.innerHTML=`<button class="btn-sm" onclick="toggleGroup('${g}','${meta.icon}')" style="font-size:10px;padding:4px 8px">👁 Ocultar/Mostrar</button>`;
+  document.getElementById('edit3d-panel').style.display='block';
+}
+function closeEdit3D(){
+  selectedMesh=null;
+  if(selectBoxMesh)selectBoxMesh.visible=false;
+  document.getElementById('edit3d-panel').style.display='none';
+  renderScene();
+}
+
+// ═══════════════════════════════════════════════════════════
+// VISIBILITY TOGGLES
+// ═══════════════════════════════════════════════════════════
+function toggleGroup(name,icon){
+  if(!meshGroups[name])return;
+  groupVisible[name]=!groupVisible[name];
+  meshGroups[name].forEach(m=>m.visible=groupVisible[name]);
+  const labels={doors:'portas',drawers:'gavetas',shelves:'prateleiras',cuba:'cuba',maleiro:'maleiro',cabideiro:'cabideiro'};
+  const btn=document.getElementById(name+'ToggleBtn');
+  if(btn) btn.textContent=icon+' '+(groupVisible[name]?'Ocultar ':'Mostrar ')+labels[name];
+  requestShadowUpdate();renderScene();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CUTTING MAP
+// ═══════════════════════════════════════════════════════════
+function updateMap(sheets,cfg){
+  const area=document.getElementById('mapArea');
+  area.innerHTML='';
+  sheets.forEach((sh,idx)=>{
+    const eff=sh.efficiency();
+    const div=document.createElement('div');
+    div.className='sheet-card';
+    const ec=eff>75?'var(--ok)':eff>50?'var(--warn)':'var(--err)';
+    div.innerHTML=`
+      <div class="sheet-hdr">
+        <div class="sheet-title">Chapa ${idx+1} de ${sheets.length}</div>
+        <div class="sheet-meta">
+          <span>📐 ${cfg.sw}×${cfg.sh}mm</span>
+          <span>🧩 ${sh.placed.length} peças</span>
+          <span style="color:${ec}">♻️ ${eff}% aproveitado</span>
+        </div>
+      </div>
+      <div class="eff-bar"><div class="eff-fill" style="width:${eff}%;background:${ec}"></div></div>
+    `;
+    const canvas=document.createElement('canvas');
+    canvas.className='map-canvas';
+    div.appendChild(canvas);
+    area.appendChild(div);
+    drawSheet(canvas,sh,cfg);
+  });
+}
+function drawSheet(canvas,sh,cfg){
+  const pad=16;
+  const contW=canvas.parentElement.clientWidth-28;
+  const sc=(contW-pad*2)/cfg.sw;
+  canvas.width=Math.round(cfg.sw*sc+pad*2);
+  canvas.height=Math.round(cfg.sh*sc+pad*2);
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#14142A';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#C8A878';ctx.fillRect(pad,pad,cfg.sw*sc,cfg.sh*sc);
+  ctx.strokeStyle='rgba(160,110,60,.15)';ctx.lineWidth=1;
+  for(let y=30;y<cfg.sh;y+=60){ctx.beginPath();ctx.moveTo(pad,pad+y*sc);ctx.lineTo(pad+cfg.sw*sc,pad+y*sc);ctx.stroke();}
+  ctx.strokeStyle='#886040';ctx.lineWidth=2;ctx.strokeRect(pad,pad,cfg.sw*sc,cfg.sh*sc);
+  sh.placed.forEach(p=>{
+    const x=pad+p.x*sc,y=pad+p.y*sc,pw=p.w*sc,ph=p.h*sc;
+    ctx.fillStyle=p.color+'CC';ctx.fillRect(x+1,y+1,pw-2,ph-2);
+    if(p.rotated){ctx.fillStyle='rgba(255,255,255,.1)';ctx.fillRect(x+1,y+1,pw-2,ph-2);}
+    ctx.strokeStyle=p.color;ctx.lineWidth=1.5;ctx.strokeRect(x+1,y+1,pw-2,ph-2);
+    if(pw>22&&ph>14){
+      const fs=clamp(Math.min(pw,ph)*.18,6,12);
+      ctx.fillStyle='rgba(0,0,0,.82)';ctx.font=`bold ${fs}px 'Segoe UI',sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      if(ph>fs*2.5){
+        ctx.fillText((p.rotated?'↻':'')+p.name,x+pw/2,y+ph/2-fs*.55);
+        ctx.font=`${fs*.8}px 'Segoe UI',sans-serif`;ctx.fillStyle='rgba(0,0,0,.6)';
+        ctx.fillText(`${p.w}×${p.h}`,x+pw/2,y+ph/2+fs*.7);
+      } else ctx.fillText((p.rotated?'↻':'')+p.name,x+pw/2,y+ph/2);
+    }
+  });
+  ctx.fillStyle='#6868A0';ctx.font='10px monospace';ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.fillText(cfg.sw+'mm',pad+4,pad+4);
+  ctx.save();ctx.translate(pad+4,pad+cfg.sh*sc-4);ctx.rotate(-Math.PI/2);ctx.fillText(cfg.sh+'mm',0,0);ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
+// PIECE LIST
+// ═══════════════════════════════════════════════════════════
+function updatePieces(pieces,cfg){
+  const area=document.getElementById('pieceArea');
+  const totalQty=pieces.reduce((s,p)=>s+p.qty,0);
+  const totalArea=(pieces.reduce((s,p)=>s+p.w*p.h*p.qty,0)/1e6).toFixed(4);
+  let html=`<table class="ptable"><thead><tr>
+    <th>Peça</th><th>Qtd</th><th>Larg. (mm)</th><th>Alt. (mm)</th><th>Área (m²)</th>
+  </tr></thead><tbody>`;
+  pieces.forEach(p=>{
+    const a=(p.w*p.h*p.qty/1e6).toFixed(4);
+    const note=p.name.endsWith('*')?`<span class="opt-tag tag-glass" style="margin-left:4px">${p.name.includes('Espelho')?'Espelho':'Vidro'} (encomenda)</span>`:'';
+    html+=`<tr>
+      <td><span class="dot" style="background:${p.color}"></span>${p.name}${note}</td>
+      <td>${p.qty}×</td><td>${p.w}</td><td>${p.h}</td><td>${a}</td>
+    </tr>`;
+  });
+  html+=`</tbody><tfoot><tr>
+    <td><strong>TOTAL</strong></td><td>${totalQty} peças</td>
+    <td colspan="2">MDF ${cfg.thick}mm · Kerf ${cfg.kerf}mm</td>
+    <td>${totalArea} m²</td>
+  </tr></tfoot></table>`;
+  if(cfg.cubaPos&&cfg.cubaPos!=='none'){
+    const posMap={center:'Centro',left:'Esquerda',right:'Direita'};
+    html+=`<div style="margin-top:12px;padding:8px 10px;background:#0F1E28;border:1px solid #1A4860;border-radius:6px;font-size:11px;color:#60B8E0">
+      🚰 <strong>Cuba:</strong> Posição ${posMap[cfg.cubaPos]} · ${cfg.cubaW}×${cfg.cubaD||350}mm
+      — O tampo será cortado em obra (não incluso na lista de chapas)
+    </div>`;
+  }
+  area.innerHTML=html;
+  document.getElementById('exportBar').style.display='flex';
+  document.getElementById('exportInfo').textContent=
+    `${projectData.sheets.length} chapa(s) · R$ ${(projectData.sheets.length*cfg.price).toFixed(2)}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// PANEL TAGS
+// ═══════════════════════════════════════════════════════════
+function updatePanelTags(cfg){
+  const tags=[];
+  const bMap={mdf:'Fundo liso',ripado:'Fundo ripado',none:'Sem fundo'};
+  const lMap={mdf:'Lat. lisa',ripado:'Lat. ripado'};
+  const fMap={none:'Sem frente',mdf:'Frente MDF',ripado:'Frente Ripado'};
+  const dMap={none:'✖ Aberta',mdf:'🪵 MDF',frente:'⬜ Frente',glass:'🔲 Vidro',espelho:'🪞 Espelho',ripado:'〰️ Ripado'};
+  tags.push(`<span class="opt-tag ${cfg.backType==='none'?'tag-none':cfg.backType==='ripado'?'tag-ripado':'tag-default'}">${bMap[cfg.backType]}</span>`);
+  tags.push(`<span class="opt-tag ${cfg.latType==='ripado'?'tag-ripado':'tag-default'}">${lMap[cfg.latType]}</span>`);
+  if(cfg.frontType&&cfg.frontType!=='none') tags.push(`<span class="opt-tag ${cfg.frontType==='ripado'?'tag-ripado':'tag-default'}">${fMap[cfg.frontType]}</span>`);
+  (cfg.columns||[]).forEach((col,idx)=>{
+    const parts=[`Col.${idx+1}: ${dMap[col.doorType]||col.doorType}`];
+    if(col.shelves>0) parts.push(`${col.shelves}prat.`);
+    (col.blocks||[]).forEach(b=>{
+      if(b.kind==='gaveteiro') parts.push(`🗄${b.qty}×${Math.round((b.unitH||300)/Math.max(1,b.qty))}mm`);
+      if(b.kind==='cabideiro') parts.push(`👔${b.unitH}mm`);
+      if(b.kind==='maleiro') parts.push(`🧳${b.unitH}mm`);
+      if(b.kind==='sapateira') parts.push(`👞${b.vaos}vãos×${Math.round((b.unitH||800)/Math.max(1,b.vaos||1))}mm`);
+    });
+    tags.push(`<span class="opt-tag tag-default">${parts.join(' · ')}</span>`);
+  });
+  if(cfg.baseType==='com') tags.push(`<span class="opt-tag tag-default">🔲 Com Base</span>`);
+  if(cfg.legsType==='com') tags.push(`<span class="opt-tag tag-default">🦵 Pezinhos ${cfg.legsH}×${cfg.legsW}mm</span>`);
+  if(cfg.cubaPos&&cfg.cubaPos!=='none') tags.push(`<span class="opt-tag tag-cuba">🚰 Cuba ${cfg.cubaPos==='center'?'centro':cfg.cubaPos==='left'?'esq.':'dir.'} ${cfg.cubaW}mm</span>`);
+  document.getElementById('panelTags').innerHTML=tags.join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PDF EXPORT
+// ═══════════════════════════════════════════════════════════
+function exportPDF(){
+  if(!projectData)return;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const {cfg,pieces,sheets,totalPieces,eff,cost}=projectData;
+  const L=15,PW=210;
+
+  doc.setFillColor(212,137,42);doc.rect(0,0,PW,32,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(22);
+  doc.text('MDF OPTIMIZER PRO',L,20);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text('Relatório de Otimização · '+new Date().toLocaleDateString('pt-BR'),L,28);
+
+  const typeNames={armario:'Armário',estante:'Estante Aberta',nicho:'Nicho/Box',
+    balcao:'Balcão de Cozinha',gabinete_banheiro:'Gabinete de Banheiro',
+    closet:'Closet/Guarda-Roupa',painel_ripado:'Painel Ripado'};
+  const bTypeNames={mdf:'MDF Liso',ripado:'Ripado',none:'Sem fundo'};
+  const cubaNames={none:'Sem cuba',center:'Centro',left:'Esquerda',right:'Direita'};
+  const frTypeNames={none:'Sem frente',mdf:'MDF',ripado:'Ripado'};
+  const dMap={none:'Aberta',mdf:'MDF',frente:'Frente',glass:'Vidro',espelho:'Espelho',ripado:'Ripado'};
+
+  doc.setTextColor(30,30,50);doc.setFont('helvetica','bold');doc.setFontSize(13);
+  doc.text('Dados do Projeto',L,48);
+
+  const colsSummary=(cfg.columns||[]).map((c,i)=>`Col.${i+1}:${dMap[c.doorType]||c.doorType}${c.blocks&&c.blocks.length?'('+c.blocks.map(b=>b.kind).join('+')+')':''}`).join(' | ');
+  const rows=[
+    ['Tipo de Móvel:',    typeNames[cfg.type]||cfg.type],
+    ['Dimensões:',        `${cfg.W} × ${cfg.H} × ${cfg.D} mm  (L × A × P)`],
+    ['Nº de Colunas:',    String(cfg.nCols)],
+    ['Colunas:',          colsSummary||'Nenhuma'],
+    ['Fundo / Laterais:', `${bTypeNames[cfg.backType]||cfg.backType} / ${cfg.latType==='ripado'?'Ripado':'MDF Liso'}`],
+    ['Frente Painel:',    frTypeNames[cfg.frontType||'none']],
+    ['Prof. Prateleira:', cfg.shelfD>0?cfg.shelfD+' mm':'Auto'],
+    ['Estrutura:',        `Base: ${cfg.baseType==='com'?'Com base':'Sem base'} · Pezinhos: ${cfg.legsType==='com'?`Com (${cfg.legsH}×${cfg.legsW}mm)`:'Sem'}`],
+    ['Cuba / Pia:',       cubaNames[cfg.cubaPos||'none']+(cfg.cubaPos&&cfg.cubaPos!=='none'?` · ${cfg.cubaW}×${cfg.cubaD||350}mm`:'')],
+    ['Espessura MDF:',    cfg.thick+' mm'],
+    ['Kerf / Serra:',     cfg.kerf+' mm'],
+    ['Chapa:',            `${cfg.sw} × ${cfg.sh} mm`],
+  ];
+  doc.setFontSize(9);
+  rows.forEach(([k,v],i)=>{
+    doc.setFont('helvetica','bold');doc.setTextColor(80,60,30);doc.text(k,L,57+i*7);
+    doc.setFont('helvetica','normal');doc.setTextColor(30,30,50);
+    const vs=doc.splitTextToSize(String(v),130);
+    doc.text(vs,L+42,57+i*7);
+  });
+
+  const stY=160,cW=41,cG=5;
+  [{label:'Chapas',val:String(sheets.length)},{label:'Aproveitamento',val:eff+'%'},
+   {label:'Total Peças',val:String(totalPieces)},{label:'Custo',val:'R$ '+cost.toFixed(2)}
+  ].forEach((s,i)=>{
+    const cx=L+i*(cW+cG);
+    doc.setFillColor(248,238,220);doc.roundedRect(cx,stY,cW,24,2,2,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(180,100,30);
+    doc.text(s.val,cx+cW/2,stY+13,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(100,100,130);
+    doc.text(s.label,cx+cW/2,stY+20,{align:'center'});
+  });
+
+  doc.addPage();
+  doc.setFillColor(212,137,42);doc.rect(0,0,PW,22,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(14);
+  doc.text('Lista de Peças',L,14);
+  const cols=[L,66,95,120,148];
+  const hdrs=['Peça','Qtd','Largura','Altura','Área (m²)'];
+  let y=34;
+  doc.setFillColor(242,235,222);doc.rect(L,y-6,PW-L*2,9,'F');
+  doc.setTextColor(80,55,20);doc.setFont('helvetica','bold');doc.setFontSize(9);
+  hdrs.forEach((h,i)=>doc.text(h,cols[i],y));
+  y+=9;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,30,50);
+  pieces.forEach((p,idx)=>{
+    if(idx%2===0){doc.setFillColor(252,249,244);doc.rect(L,y-5,PW-L*2,8,'F');}
+    const a=(p.w*p.h*p.qty/1e6).toFixed(4);
+    doc.text(p.name.replace('*',''),cols[0],y);doc.text(p.qty+'×',cols[1],y);
+    doc.text(p.w+' mm',cols[2],y);doc.text(p.h+' mm',cols[3],y);doc.text(a,cols[4],y);
+    y+=8;if(y>275){doc.addPage();y=20;}
+  });
+  y+=3;
+  const totalA=(pieces.reduce((s,p)=>s+p.w*p.h*p.qty,0)/1e6).toFixed(4);
+  doc.setFillColor(212,137,42);doc.rect(L,y-6,PW-L*2,9,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(9);
+  doc.text('TOTAL',cols[0],y);doc.text(totalPieces+' peças',cols[1],y);
+  doc.text('',cols[2],y);doc.text('',cols[3],y);doc.text(totalA+' m²',cols[4],y);
+
+  sheets.forEach((sh,idx)=>{
+    doc.addPage([297,210],'l');
+    doc.setFillColor(212,137,42);doc.rect(0,0,297,20,'F');
+    doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(12);
+    doc.text(`Mapa de Corte — Chapa ${idx+1} de ${sheets.length}`,L,13);
+    doc.setFont('helvetica','normal');doc.setFontSize(9);
+    doc.text(`${cfg.sw}×${cfg.sh}mm · Aproveitamento: ${sh.efficiency()}%`,200,13);
+    const mL=L,mT=24,avW=297-mL*2,avH=210-mT-12;
+    const sc=Math.min(avW/cfg.sw,avH/cfg.sh);
+    const sW=cfg.sw*sc,sH=cfg.sh*sc;
+    doc.setFillColor(200,168,120);doc.rect(mL,mT,sW,sH,'F');
+    doc.setDrawColor(136,100,64);doc.setLineWidth(0.4);doc.rect(mL,mT,sW,sH,'S');
+    sh.placed.forEach(p=>{
+      const rgb=hexRGB(p.color);
+      doc.setFillColor(rgb.r,rgb.g,rgb.b);
+      doc.setDrawColor(Math.max(0,rgb.r-45),Math.max(0,rgb.g-45),Math.max(0,rgb.b-45));
+      doc.setLineWidth(0.25);
+      const px=mL+p.x*sc,py=mT+p.y*sc,pw=p.w*sc,ph=p.h*sc;
+      doc.rect(px+.4,py+.4,pw-.8,ph-.8,'FD');
+      if(pw>7&&ph>5){
+        doc.setTextColor(20,10,5);doc.setFont('helvetica','bold');
+        const fs=clamp(Math.min(pw,ph)*.28,3.5,7);doc.setFontSize(fs);
+        doc.text(p.name.replace('*',''),px+pw/2,py+ph/2-fs*.3,{align:'center'});
+        doc.setFont('helvetica','normal');doc.setFontSize(fs*.82);
+        doc.text(`${p.w}×${p.h}`,px+pw/2,py+ph/2+fs*.5,{align:'center'});
+      }
+    });
+  });
+  doc.save(`mdf-projeto-${Date.now()}.pdf`);
+}
+function hexRGB(hex){
+  const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r?{r:parseInt(r[1],16),g:parseInt(r[2],16),b:parseInt(r[3],16)}:{r:200,g:120,b:50};
+}
+
+// ═══════════════════════════════════════════════════════════
+// CSV
+// ═══════════════════════════════════════════════════════════
+function copyCSV(){
+  if(!projectData)return;
+  let csv='Peça,Quantidade,Largura (mm),Altura (mm),Área (m²)\n';
+  projectData.pieces.forEach(p=>{
+    csv+=`${p.name.replace('*','')},${p.qty},${p.w},${p.h},${(p.w*p.h*p.qty/1e6).toFixed(4)}\n`;
+  });
+  navigator.clipboard.writeText(csv).then(()=>{
+    const b=document.querySelector('.btn-csv');
+    const o=b.textContent;b.textContent='✅ Copiado!';setTimeout(()=>b.textContent=o,2000);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function onSheetChange(){
+  document.getElementById('customSheet').style.display=
+    document.getElementById('sheetPreset').value==='custom'?'block':'none';
+}
+
+function onTypeChange(){
+  const t=document.getElementById('fType').value;
+  const showCuba=['balcao','gabinete_banheiro'].includes(t);
+  document.getElementById('cubaSection').style.display=showCuba?'block':'none';
+  document.getElementById('columnsSection').style.display=t==='painel_ripado'?'none':'block';
+  if(!showCuba){
+    document.getElementById('cubaPos').value='none';
+    document.getElementById('cubaDims').style.display='none';
+  }
+  if(t==='painel_ripado'){
+    document.getElementById('fH').value=2400;document.getElementById('fD').value=80;
+  } else if(t==='nicho'||t==='estante'){
+    document.getElementById('nCols').value=1;
+    columns=[{doorType:'none',shelves:3,blocks:[]}];
+  } else if(t==='balcao'){
+    document.getElementById('fH').value=900;document.getElementById('fD').value=600;
+    document.getElementById('nCols').value=2;
+    columns=[
+      {doorType:'mdf',shelves:0,blocks:[{kind:'gaveteiro',vertPos:'baixo',qty:2,unitH:300,sentido:'horizontal',doorType:'mdf',depth:0}]},
+      {doorType:'mdf',shelves:0,blocks:[]}
+    ];
+  } else if(t==='gabinete_banheiro'){
+    document.getElementById('fW').value=600;document.getElementById('fH').value=870;document.getElementById('fD').value=470;
+    document.getElementById('nCols').value=1;
+    columns=[{doorType:'mdf',shelves:0,blocks:[{kind:'gaveteiro',vertPos:'baixo',qty:1,unitH:200,sentido:'horizontal',doorType:'mdf',depth:0}]}];
+  } else if(t==='closet'){
+    document.getElementById('nCols').value=3;
+    columns=[
+      {doorType:'mdf',shelves:0,blocks:[{kind:'cabideiro',vertPos:'cima',nRods:1,unitH:1100},{kind:'gaveteiro',vertPos:'baixo',qty:2,unitH:300,sentido:'horizontal',doorType:'mdf',depth:0}]},
+      {doorType:'mdf',shelves:3,blocks:[]},
+      {doorType:'mdf',shelves:0,blocks:[{kind:'cabideiro',vertPos:'cima',nRods:1,unitH:1100}]}
+    ];
+  } else {
+    document.getElementById('nCols').value=3;
+    columns=[
+      {doorType:'mdf',shelves:0,blocks:[{kind:'gaveteiro',vertPos:'baixo',qty:2,unitH:300,sentido:'horizontal',doorType:'mdf',depth:0}]},
+      {doorType:'mdf',shelves:3,blocks:[]},
+      {doorType:'mdf',shelves:3,blocks:[]}
+    ];
+  }
+  renderColumns();
+}
+
+function onLegsTypeChange(){
+  const v=document.getElementById('legsType').value;
+  document.getElementById('legsDims').style.display=v==='com'?'block':'none';
+}
+function onCubaPosChange(){
+  const pos=document.getElementById('cubaPos').value;
+  document.getElementById('cubaDims').style.display=pos!=='none'?'block':'none';
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName!=='BUTTON')calculate();});
+window.addEventListener('load',()=>{
+  onTypeChange();
+  setTimeout(init3D,80);
+});
+
+// ── Auto-recálculo da barra lateral (depois do 1º cálculo manual) ──
+let _autoCalcTimer=null;
+function scheduleAutoCalc(){
+  if(!projectData)return;
+  clearTimeout(_autoCalcTimer);
+  _autoCalcTimer=setTimeout(calculate,350);
+}
+document.querySelector('.sidebar').addEventListener('input',e=>{
+  if(e.target.closest('#statsSection'))return;
+  scheduleAutoCalc();
+});
+document.querySelector('.sidebar').addEventListener('change',e=>{
+  if(e.target.closest('#statsSection'))return;
+  scheduleAutoCalc();
+});
+</script>
+</body>
+</html>
